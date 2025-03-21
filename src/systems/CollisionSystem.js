@@ -141,107 +141,116 @@ export class CollisionSystem {
     // Get player position in 2D (x, z) for collision testing
     const playerPos2D = new THREE.Vector2(player.position.x, player.position.z);
     
-    // Check all active chunks for objects that could collide
-    const activeChunks = this.worldGenerator.chunks;
-    let collision = false;
-    let collisionNormal = new THREE.Vector2();
+    // Early return if no object placer
+    if (!this.worldGenerator.objectPlacer) return;
     
-    // Use the object placer reference to access objects
-    if (this.worldGenerator.objectPlacer) {
-      const objectPlacer = this.worldGenerator.objectPlacer;
+    const objectPlacer = this.worldGenerator.objectPlacer;
+    
+    // Check collisions in priority order
+    const collisionResult = this.checkBuildingCollisions(playerPos2D, objectPlacer) || 
+                            this.checkApartmentCollisions(playerPos2D, objectPlacer) ||
+                            this.checkWorldObjectCollisions(playerPos2D, objectPlacer);
+    
+    // Apply collision response if needed
+    if (collisionResult) {
+      this.applyCollisionResponse(player, originalPosition, collisionResult);
+    }
+  }
+  
+  // Check for collisions with buildings
+  checkBuildingCollisions(playerPos2D, objectPlacer) {
+    const buildingRadius = 2.5;
+    
+    for (const buildingPos of objectPlacer.buildingPositions) {
+      const buildingPos2D = new THREE.Vector2(buildingPos.x, buildingPos.z);
+      const distance = playerPos2D.distanceTo(buildingPos2D);
       
-      // Check against building positions (they're already tracked for road placement)
-      for (const buildingPos of objectPlacer.buildingPositions) {
-        const buildingPos2D = new THREE.Vector2(buildingPos.x, buildingPos.z);
-        const distance = playerPos2D.distanceTo(buildingPos2D);
+      if (distance < this.playerRadius + buildingRadius) {
+        // Calculate bounce direction (away from building)
+        const normal = new THREE.Vector2().subVectors(playerPos2D, buildingPos2D).normalize();
+        return { normal };
+      }
+    }
+    
+    return null;
+  }
+  
+  // Check for collisions with apartments
+  checkApartmentCollisions(playerPos2D, objectPlacer) {
+    const apartmentRadius = 5;
+    
+    for (const apartmentPos of objectPlacer.apartmentPositions) {
+      const apartmentPos2D = new THREE.Vector2(apartmentPos.x, apartmentPos.z);
+      const distance = playerPos2D.distanceTo(apartmentPos2D);
+      
+      if (distance < this.playerRadius + apartmentRadius) {
+        // Calculate bounce direction (away from apartment)
+        const normal = new THREE.Vector2().subVectors(playerPos2D, apartmentPos2D).normalize();
+        return { normal };
+      }
+    }
+    
+    return null;
+  }
+  
+  // Check for collisions with other world objects
+  checkWorldObjectCollisions(playerPos2D, objectPlacer) {
+    for (const [chunkKey, objects] of objectPlacer.objects) {
+      for (const object of objects) {
+        // Skip non-collidable objects or objects without position
+        if (!object.position) continue;
         
-        // Building collision radius (larger than player for better feeling)
-        const buildingRadius = 2.5;
+        // Get collision radius based on object type
+        const objectRadius = this.getObjectCollisionRadius(object);
         
-        if (distance < this.playerRadius + buildingRadius) {
-          collision = true;
-          // Calculate bounce direction (away from building)
-          collisionNormal.subVectors(playerPos2D, buildingPos2D).normalize();
-          break; // Stop after first collision
+        // Simple distance check
+        const objectPos2D = new THREE.Vector2(object.position.x, object.position.z);
+        const distance = playerPos2D.distanceTo(objectPos2D);
+        
+        if (distance < this.playerRadius + objectRadius) {
+          // Calculate bounce direction (away from object)
+          const normal = new THREE.Vector2().subVectors(playerPos2D, objectPos2D).normalize();
+          return { normal };
         }
       }
-      
-      // Check against apartment positions if no building collision
-      if (!collision) {
-        for (const apartmentPos of objectPlacer.apartmentPositions) {
-          const apartmentPos2D = new THREE.Vector2(apartmentPos.x, apartmentPos.z);
-          const distance = playerPos2D.distanceTo(apartmentPos2D);
-          
-          // Apartment collision radius (larger than buildings)
-          const apartmentRadius = 5;
-          
-          if (distance < this.playerRadius + apartmentRadius) {
-            collision = true;
-            // Calculate bounce direction (away from apartment)
-            collisionNormal.subVectors(playerPos2D, apartmentPos2D).normalize();
-            break; // Stop after first collision
-          }
-        }
+    }
+    
+    return null;
+  }
+  
+  // Determine collision radius based on object type
+  getObjectCollisionRadius(object) {
+    // If object has type metadata
+    if (object.userData && object.userData.type) {
+      switch (object.userData.type) {
+        case 'tree': return 0.8;
+        case 'rock': return 0.6;
+        case 'bush': return 0.5;
+        default: return 0.5;
       }
-      
-      // Check all objects in active chunks
-      if (!collision) {
-        for (const [chunkKey, objects] of objectPlacer.objects) {
-          for (const object of objects) {
-            // Skip non-collidable objects or objects without position
-            if (!object.position) continue;
-            
-            // Different collision radius based on object type
-            let objectRadius = 0;
-            
-            // Determine object type based on properties or structure
-            if (object.userData && object.userData.type) {
-              // If object has type metadata
-              switch (object.userData.type) {
-                case 'tree': objectRadius = 0.8; break;
-                case 'rock': objectRadius = 0.6; break;
-                case 'bush': objectRadius = 0.5; break;
-                default: objectRadius = 0.5;
-              }
-            } else {
-              // Try to guess based on size or children
-              if (object.scale && object.scale.x > 1.5) {
-                objectRadius = 0.8; // Probably a tree
-              } else {
-                objectRadius = 0.4; // Default size
-              }
-            }
-            
-            // Simple distance check
-            const objectPos2D = new THREE.Vector2(object.position.x, object.position.z);
-            const distance = playerPos2D.distanceTo(objectPos2D);
-            
-            if (distance < this.playerRadius + objectRadius) {
-              collision = true;
-              // Calculate bounce direction (away from object)
-              collisionNormal.subVectors(playerPos2D, objectPos2D).normalize();
-              break; // Stop after first collision
-            }
-          }
-          if (collision) break;
-        }
-      }
-      
-      // If collision occurred, bounce the player back
-      if (collision) {
-        // Calculate bounce position by moving away from collision point
-        const bounceDistance = this.bounceStrength;
-        
-        // Move player position away from collision along normal
-        player.position.x = originalPosition.x + collisionNormal.x * bounceDistance;
-        player.position.z = originalPosition.z + collisionNormal.y * bounceDistance;
-        
-        // Update mesh position for immediate visual feedback
-        if (player.group && player.group.position) {
-          player.group.position.x = player.position.x;
-          player.group.position.z = player.position.z;
-        }
-      }
+    } 
+    
+    // Try to guess based on size or children
+    if (object.scale && object.scale.x > 1.5) {
+      return 0.8; // Probably a tree
+    }
+    
+    return 0.4; // Default size
+  }
+  
+  // Apply collision response
+  applyCollisionResponse(player, originalPosition, collisionResult) {
+    const { normal } = collisionResult;
+    const bounceDistance = this.bounceStrength;
+    
+    // Move player position away from collision along normal
+    player.position.x = originalPosition.x + normal.x * bounceDistance;
+    player.position.z = originalPosition.z + normal.y * bounceDistance;
+    
+    // Update mesh position for immediate visual feedback
+    if (player.group && player.group.position) {
+      player.group.position.x = player.position.x;
+      player.group.position.z = player.position.z;
     }
   }
   
