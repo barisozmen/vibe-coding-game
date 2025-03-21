@@ -14,9 +14,14 @@ export class CollisionSystem {
     
     // Flag to indicate if player origin is at feet (true) or center (false)
     this.playerOriginAtFeet = true;
+    
+    // Object collision parameters
+    this.objectCollisionEnabled = true;
+    this.objectColliders = new Map(); // Map to store object colliders
+    this.bounceStrength = 0.5; // How strongly to bounce the player back
   }
   
-  // Update player position based on terrain
+  // Update player position based on terrain and objects
   update(player, deltaTime) {
     if (!this.enabled) return;
     
@@ -35,6 +40,17 @@ export class CollisionSystem {
       deltaTime = 1/60; // Default to 60fps
     }
     
+    // 1. Handle terrain collision and gravity
+    this.handleTerrainCollision(player, deltaTime, originalPosition);
+    
+    // 2. Handle object collisions (after terrain collision to ensure correct height)
+    if (this.objectCollisionEnabled) {
+      this.handleObjectCollision(player, originalPosition);
+    }
+  }
+  
+  // Handle terrain collision and gravity
+  handleTerrainCollision(player, deltaTime, originalPosition) {
     // Get the terrain height at player's position
     const terrainHeight = this.getTerrainHeightAt(player.position.x, player.position.z);
     
@@ -118,6 +134,131 @@ export class CollisionSystem {
         }
       }
     }
+  }
+  
+  // Handle collision with objects in the world
+  handleObjectCollision(player, originalPosition) {
+    // Get player position in 2D (x, z) for collision testing
+    const playerPos2D = new THREE.Vector2(player.position.x, player.position.z);
+    
+    // Check all active chunks for objects that could collide
+    const activeChunks = this.worldGenerator.chunks;
+    let collision = false;
+    let collisionNormal = new THREE.Vector2();
+    
+    // Use the object placer reference to access objects
+    if (this.worldGenerator.objectPlacer) {
+      const objectPlacer = this.worldGenerator.objectPlacer;
+      
+      // Check against building positions (they're already tracked for road placement)
+      for (const buildingPos of objectPlacer.buildingPositions) {
+        const buildingPos2D = new THREE.Vector2(buildingPos.x, buildingPos.z);
+        const distance = playerPos2D.distanceTo(buildingPos2D);
+        
+        // Building collision radius (larger than player for better feeling)
+        const buildingRadius = 2.5;
+        
+        if (distance < this.playerRadius + buildingRadius) {
+          collision = true;
+          // Calculate bounce direction (away from building)
+          collisionNormal.subVectors(playerPos2D, buildingPos2D).normalize();
+          break; // Stop after first collision
+        }
+      }
+      
+      // Check against apartment positions if no building collision
+      if (!collision) {
+        for (const apartmentPos of objectPlacer.apartmentPositions) {
+          const apartmentPos2D = new THREE.Vector2(apartmentPos.x, apartmentPos.z);
+          const distance = playerPos2D.distanceTo(apartmentPos2D);
+          
+          // Apartment collision radius (larger than buildings)
+          const apartmentRadius = 5;
+          
+          if (distance < this.playerRadius + apartmentRadius) {
+            collision = true;
+            // Calculate bounce direction (away from apartment)
+            collisionNormal.subVectors(playerPos2D, apartmentPos2D).normalize();
+            break; // Stop after first collision
+          }
+        }
+      }
+      
+      // Check all objects in active chunks
+      if (!collision) {
+        for (const [chunkKey, objects] of objectPlacer.objects) {
+          for (const object of objects) {
+            // Skip non-collidable objects or objects without position
+            if (!object.position) continue;
+            
+            // Different collision radius based on object type
+            let objectRadius = 0;
+            
+            // Determine object type based on properties or structure
+            if (object.userData && object.userData.type) {
+              // If object has type metadata
+              switch (object.userData.type) {
+                case 'tree': objectRadius = 0.8; break;
+                case 'rock': objectRadius = 0.6; break;
+                case 'bush': objectRadius = 0.5; break;
+                default: objectRadius = 0.5;
+              }
+            } else {
+              // Try to guess based on size or children
+              if (object.scale && object.scale.x > 1.5) {
+                objectRadius = 0.8; // Probably a tree
+              } else {
+                objectRadius = 0.4; // Default size
+              }
+            }
+            
+            // Simple distance check
+            const objectPos2D = new THREE.Vector2(object.position.x, object.position.z);
+            const distance = playerPos2D.distanceTo(objectPos2D);
+            
+            if (distance < this.playerRadius + objectRadius) {
+              collision = true;
+              // Calculate bounce direction (away from object)
+              collisionNormal.subVectors(playerPos2D, objectPos2D).normalize();
+              break; // Stop after first collision
+            }
+          }
+          if (collision) break;
+        }
+      }
+      
+      // If collision occurred, bounce the player back
+      if (collision) {
+        // Calculate bounce position by moving away from collision point
+        const bounceDistance = this.bounceStrength;
+        
+        // Move player position away from collision along normal
+        player.position.x = originalPosition.x + collisionNormal.x * bounceDistance;
+        player.position.z = originalPosition.z + collisionNormal.y * bounceDistance;
+        
+        // Update mesh position for immediate visual feedback
+        if (player.group && player.group.position) {
+          player.group.position.x = player.position.x;
+          player.group.position.z = player.position.z;
+        }
+      }
+    }
+  }
+  
+  // Register a world object for collision detection
+  registerObjectCollider(object, radius) {
+    if (!object.uuid) return;
+    
+    this.objectColliders.set(object.uuid, {
+      object,
+      radius: radius || 1.0
+    });
+  }
+  
+  // Remove an object collider
+  removeObjectCollider(object) {
+    if (!object.uuid) return;
+    this.objectColliders.delete(object.uuid);
   }
   
   // Get terrain height at position
