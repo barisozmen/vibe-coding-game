@@ -147,7 +147,8 @@ export class CollisionSystem {
     const objectPlacer = this.worldGenerator.objectPlacer;
     
     // Check collisions in priority order
-    const collisionResult = this.checkBuildingCollisions(playerPos2D, objectPlacer) || 
+    const collisionResult = this.checkMegaRockCollisions(playerPos2D, objectPlacer) || 
+                            this.checkBuildingCollisions(playerPos2D, objectPlacer) || 
                             this.checkApartmentCollisions(playerPos2D, objectPlacer) ||
                             this.checkWorldObjectCollisions(playerPos2D, objectPlacer);
     
@@ -156,10 +157,28 @@ export class CollisionSystem {
       this.applyCollisionResponse(player, originalPosition, collisionResult);
     }
   }
+
+  // Check for collisions with mega rocks
+  checkMegaRockCollisions(playerPos2D, objectPlacer) {
+    const megaRockRadius = 1;
+    
+    for (const megaRockPos of objectPlacer.megaRockPositions) {
+      const megaRockPos2D = new THREE.Vector2(megaRockPos.x, megaRockPos.z);
+      const distance = playerPos2D.distanceTo(megaRockPos2D);
+      
+      if (distance < this.playerRadius + megaRockRadius) {
+        // Calculate bounce direction (away from mega rock)
+        const normal = new THREE.Vector2().subVectors(playerPos2D, megaRockPos2D).normalize();
+        return { normal };
+      }
+    }
+    
+    return null;
+  }
   
   // Check for collisions with buildings
   checkBuildingCollisions(playerPos2D, objectPlacer) {
-    const buildingRadius = 2.5;
+    const buildingRadius = 1;
     
     for (const buildingPos of objectPlacer.buildingPositions) {
       const buildingPos2D = new THREE.Vector2(buildingPos.x, buildingPos.z);
@@ -177,7 +196,7 @@ export class CollisionSystem {
   
   // Check for collisions with apartments
   checkApartmentCollisions(playerPos2D, objectPlacer) {
-    const apartmentRadius = 5;
+    const apartmentRadius = 1;
     
     for (const apartmentPos of objectPlacer.apartmentPositions) {
       const apartmentPos2D = new THREE.Vector2(apartmentPos.x, apartmentPos.z);

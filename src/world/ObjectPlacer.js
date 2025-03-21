@@ -13,7 +13,7 @@ const ROCK_DENSITY = 10;
 const BUSH_DENSITY = 15;
 const BUILDING_DENSITY = 20;
 const APARTMENT_DENSITY = 10; // Lower density for larger buildings
-const MEGA_ROCK_DENSITY = 0.3; // Very low density for mega rocks (1 in ~3 chunks)
+const MEGA_ROCK_DENSITY = 0.1; // Very low density for mega rocks (1 in ~3 chunks)
 
 // Min distance between buildings to prevent overlap
 const MIN_BUILDING_DISTANCE = 10;
