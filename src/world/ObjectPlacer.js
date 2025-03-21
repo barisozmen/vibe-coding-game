@@ -5,17 +5,20 @@ import { LowPolyBush } from '../assets/LowPolyBush.js';
 import { LowPolyBuilding } from '../assets/LowPolyBuilding.js';
 import { LowPolyApartment } from '../assets/LowPolyApartment.js';
 import { LowPolyRoad } from '../assets/LowPolyRoad.js';
+import { LowPolyMegaRock } from '../assets/LowPolyMegaRock.js';
 
 // Density values for object placement (objects per chunk)
 const TREE_DENSITY = 20;
 const ROCK_DENSITY = 10;
 const BUSH_DENSITY = 15;
-const BUILDING_DENSITY = 2;
-const APARTMENT_DENSITY = 1; // Lower density for larger buildings
+const BUILDING_DENSITY = 20;
+const APARTMENT_DENSITY = 10; // Lower density for larger buildings
+const MEGA_ROCK_DENSITY = 0.3; // Very low density for mega rocks (1 in ~3 chunks)
 
 // Min distance between buildings to prevent overlap
 const MIN_BUILDING_DISTANCE = 10;
 const MIN_APARTMENT_DISTANCE = 20;
+const MIN_MEGA_ROCK_DISTANCE = 80; // Very large distance for these massive structures
 
 export class ObjectPlacer {
   constructor(scene, seed) {
@@ -30,10 +33,12 @@ export class ObjectPlacer {
     this.buildingFactory = new LowPolyBuilding();
     this.apartmentFactory = new LowPolyApartment();
     this.roadFactory = new LowPolyRoad();
+    this.megaRockFactory = new LowPolyMegaRock();
     
     // Store building positions for road placement
     this.buildingPositions = [];
     this.apartmentPositions = [];
+    this.megaRockPositions = []; // Store mega rock positions for distance checking
     
     // Road network already placed
     this.roadNetworkPlaced = false;
@@ -51,6 +56,11 @@ export class ObjectPlacer {
     if (this.isTownLocation(chunk.chunkX, chunk.chunkZ)) {
       this.createTownCenter(chunk, chunkObjects, random);
     } 
+    // Place alien mega rocks with low probability
+    else if (random() > (1 - MEGA_ROCK_DENSITY)) {
+      // Place a mega rock if the terrain is suitable and it's far from other mega rocks
+      this.placeMegaRock(chunk, chunkObjects, random);
+    }
     // Otherwise place normal objects
     else {
       // Place trees
@@ -100,7 +110,7 @@ export class ObjectPlacer {
       );
       
       // Place apartment buildings (even more rarely, and only on very flat areas)
-      if (random() > 0.7) { // Only 30% of chunks get apartments
+      if (random() > 0.5) { // Changed from 0.7 to 0.5 to increase probability to 50%
         this.placeObjects(
           chunk, 
           chunkObjects, 
@@ -260,11 +270,32 @@ export class ObjectPlacer {
       const height = chunk.getHeightAt(worldX, worldZ);
       
       // Skip if underwater or additional check fails
-      if (height < minHeight || height > 2.0) continue;
+      if (height < minHeight) continue;
       if (additionalCheckFn && !additionalCheckFn(worldX, worldZ, chunk)) continue;
       
       // Create object and add to scene
       const object = createFn(worldX, worldZ, height);
+      
+      // Add object type as userData for collision detection
+      // Determine object type based on the function that created it
+      const fnString = createFn.toString();
+      if (fnString.includes('treeFactory')) {
+        object.userData.type = 'tree';
+        object.userData.collisionRadius = 0.8;
+      } else if (fnString.includes('rockFactory')) {
+        object.userData.type = 'rock';
+        object.userData.collisionRadius = 0.6;
+      } else if (fnString.includes('bushFactory')) {
+        object.userData.type = 'bush';
+        object.userData.collisionRadius = 0.5;
+      } else if (fnString.includes('buildingFactory')) {
+        object.userData.type = 'building';
+        object.userData.collisionRadius = 2.5;
+      } else if (fnString.includes('apartmentFactory')) {
+        object.userData.type = 'apartment';
+        object.userData.collisionRadius = 5.0;
+      }
+      
       this.scene.add(object);
       chunkObjects.push(object);
       
@@ -297,7 +328,7 @@ export class ObjectPlacer {
     const max = Math.max(...samples);
     
     // Area is flat if max height difference is small
-    return (max - min) < 0.2;
+    return (max - min) < 0.5;
   }
   
   // Check if area is very flat (for apartments)
@@ -321,8 +352,8 @@ export class ObjectPlacer {
     const min = Math.min(...samples);
     const max = Math.max(...samples);
     
-    // Area is very flat if max height difference is extremely small
-    return (max - min) < 0.15;
+    // Area is very flat if max height difference is small (increased from 0.15 to 0.3)
+    return (max - min) < 0.3;
   }
   
   // Check if position is far enough from other buildings
@@ -386,5 +417,73 @@ export class ObjectPlacer {
       const x = Math.sin(seed++) * 10000;
       return x - Math.floor(x);
     };
+  }
+  
+  // Place a mega rock formation in a chunk
+  placeMegaRock(chunk, chunkObjects, random) {
+    // Choose a position within the chunk
+    const centerX = chunk.chunkX * chunk.size + chunk.size / 2;
+    const centerZ = chunk.chunkZ * chunk.size + chunk.size / 2;
+    
+    // Get terrain height at center
+    const height = chunk.getHeightAt(centerX, centerZ);
+    
+    // Skip if underwater or unsuitable terrain
+    if (height < 1.0) return;
+    
+    // Check if it's far enough from other mega rocks
+    if (!this.isFarFromMegaRocks(centerX, centerZ, MIN_MEGA_ROCK_DISTANCE)) return;
+    
+    // Create the mega rock
+    const megaRock = this.megaRockFactory.create(centerX, height, centerZ);
+    
+    // Store position for distance checking
+    this.megaRockPositions.push(new THREE.Vector3(centerX, height, centerZ));
+    
+    // Add to scene and object list
+    this.scene.add(megaRock);
+    chunkObjects.push(megaRock);
+    
+    // Add some smaller rocks around the mega rock for decoration
+    const numDecorations = 8 + Math.floor(random() * 5);
+    for (let i = 0; i < numDecorations; i++) {
+      const angle = random() * Math.PI * 2;
+      const distance = 15 + random() * 20;
+      
+      const x = centerX + Math.cos(angle) * distance;
+      const z = centerZ + Math.sin(angle) * distance;
+      const y = chunk.getHeightAt(x, z);
+      
+      if (y !== null && y >= 0.3) {
+        // 70% chance for rock, 30% for bush
+        if (random() > 0.3) {
+          const rock = this.rockFactory.create(x, y, z);
+          // Make the rocks larger
+          const scale = 1.0 + random() * 0.8;
+          rock.scale.set(scale, scale, scale);
+          this.scene.add(rock);
+          chunkObjects.push(rock);
+        } else {
+          const bush = this.bushFactory.create(x, y, z);
+          this.scene.add(bush);
+          chunkObjects.push(bush);
+        }
+      }
+    }
+  }
+  
+  // Check if position is far enough from other mega rocks
+  isFarFromMegaRocks(x, z, minDistance) {
+    for (const pos of this.megaRockPositions) {
+      const dx = pos.x - x;
+      const dz = pos.z - z;
+      const distSq = dx * dx + dz * dz;
+      
+      if (distSq < minDistance * minDistance) {
+        return false;
+      }
+    }
+    
+    return true;
   }
 } 

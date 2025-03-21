@@ -50,6 +50,11 @@ export class WorldGenerator {
     console.log(`Forced spawn point at (0, ${originHeight}, 0)`);
     return new THREE.Vector3(0, originHeight, 0);
   }
+  
+  // Provide access to the object placer for other systems
+  getObjectPlacer() {
+    return this.objectPlacer;
+  }
 
   // Update world based on player position
   update(playerPosition) {

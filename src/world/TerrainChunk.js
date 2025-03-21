@@ -108,15 +108,15 @@ export class TerrainChunk {
         color.setRGB(0.1, 0.3, 0.6);
       }
       // Sand/beach
-      else if (y < this.waterLevel + 0.1) {
+      else if (y < this.waterLevel + 2) {
         color.setRGB(0.85, 0.8, 0.55);
       }
       // Grass/plains (expanded range for more land)
-      else if (y < 1.5) {
+      else if (y < 20) {
         color.setRGB(0.2 + Math.random() * 0.1, 0.5 + Math.random() * 0.1, 0.2);
       }
       // Mountain/rock
-      else if (y < 3.0) {
+      else if (y < 40) {
         color.setRGB(0.4, 0.3, 0.2);
       }
       // Snow peaks
@@ -175,21 +175,21 @@ export class TerrainChunk {
   // Generate height value using multiple noise samples
   generateHeight(x, z) {
     // Scale coordinates for noise input
-    const worldX = x / 150; // Increased scale for larger terrain features (was 100)
-    const worldZ = z / 150; // Increased scale for larger terrain features (was 100)
+    const worldX = x / 550; // Increased scale for larger terrain features (was 100)
+    const worldZ = z / 550; // Increased scale for larger terrain features (was 100)
     
     // Multiple noise layers for varied terrain
     // Large-scale height variation (mountains and valleys)
     const mountainNoise = this.noise.noise(
       worldX * 0.5 + this.seed * 0.1,
       worldZ * 0.5 + this.seed * 0.2
-    ) * 20.5; // Increased amplitude for more dramatic terrain
+    ) * 30; // Increased amplitude for more dramatic terrain
     
     // Medium-scale height variation (hills)
     const hillNoise = this.noise.noise(
       worldX * 1.5 + this.seed * 0.3,
       worldZ * 1.5 + this.seed * 0.4
-    ) * 0.7; // Increased amplitude
+    ) * 3; // Increased amplitude
     
     // Small-scale height variation (roughness)
     const roughness = this.noise.noise(
