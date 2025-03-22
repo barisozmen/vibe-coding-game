@@ -3,21 +3,32 @@
 You can play the game at: [game1.bozmen.xyz](https://game1.bozmen.xyz)
 
 This is what you'll see when you open the game:
-
 ![alt text](gamescreenshot.png)
 
+**Controls:**
+- Use W-A-S-D keys to move around.
+- Use mouse left-click to look around.
+- Use left mouse button to interact with objects.
 
+**Important note:** You might be spawned underwater in the beginning of the game (it's random). If so, please look-around to find a land, and go there with W-A-S-D keys. As another option, you can just refresh the page, and until you get spawned on land.
 
-
-
-
-
-
-Three.js Third Person Game
 
 ## Introduction
 
-Welcome to our Three.js-based 3D RPG game framework! This project implements an infinite procedural world generator with low-poly assets, character controls, terrain systems, and collision detection. This document will help you understand the codebase organization, key components, and how to navigate the project.
+This game implements an infinite procedural world generator with low-poly assets, character controls, terrain systems, and collision detection. This document will help you understand the codebase organization, key components, and how to navigate the project.
+
+##### Techstack:
+- Three.js
+- Vite
+- JavaScript
+
+##### Glossary:
+- **Third person game (perspective game)**: A game where the player controls a character that is viewed from a third person perspective.
+- **Procedural world generation**: The process of generating a world using algorithms rather than a pre-defined level design.
+- **Low-poly art style**: A style of art that uses simple, blocky shapes to create objects.
+- **Terrain**: The surface of the world.
+- **Chunk**: A part of the world that is generated at once.
+
 
 ## Table of Contents
 
