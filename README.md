@@ -1,48 +1,19 @@
-<think>
-Based on the request, I need to create a comprehensive README.md document that helps new engineers understand the codebase organization, design patterns, and core components. Looking at the provided code, this appears to be a 3D RPG game using Three.js and Vite as the build tool.
+# Perspective Game
 
-Let me break down the key components I can identify:
+You can play the game at: [game1.bozmen.xyz](https://game1.bozmen.xyz)
 
-1. **Project Structure**:
-   - Main entry point appears to be `src/index.js`
-   - World generation is handled in `src/world/`
-   - Entities like player are in `src/entities/`
-   - Low-poly assets are in `src/assets/`
-   - Systems (collision, etc.) are in `src/systems/`
+This is what you'll see when you open the game:
 
-2. **Core Components**:
-   - **World Generator**: Creates procedural terrain
-   - **Object Placer**: Places objects like trees, rocks, buildings in the world
-   - **Player Controller**: Handles player movement and input
-   - **System Manager**: Manages game systems like collision
-   - **Low-poly Assets**: Various asset classes for trees, buildings, roads, etc.
+![alt text](gamescreenshot.png)
 
-3. **Design Patterns**:
-   - **Component-Based Design**: The code separates concerns into different components
-   - **Factory Pattern**: Asset classes act as factories for creating different objects
-   - **Manager Pattern**: SystemManager coordinates different systems
-   - **Observer Pattern**: For handling events and updates
 
-4. **Notable Features**:
-   - Procedural terrain generation
-   - Infinite world loading based on player position
-   - Low-poly aesthetic
-   - Collision detection
-   - Building placement and road networks
 
-I'll structure the README to include:
-1. Introduction
-2. Project Setup/Installation
-3. Project Structure
-4. Core Components & Entry Points
-5. Design Patterns Used
-6. Tips & Tricks for Development
-7. Common Tasks (with examples)
 
-I'll create a comprehensive document that would help any new engineer get up to speed with the codebase.
-</think>
 
-# Three.js RPG Game Framework
+
+
+
+Three.js Third Person Game
 
 ## Introduction
 
