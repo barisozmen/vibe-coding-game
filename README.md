@@ -3,7 +3,7 @@
 You can play the game at: [game1.bozmen.xyz](https://game1.bozmen.xyz)
 
 This is what you'll see when you open the game:
-![alt text](gamescreenshot.png)
+[![alt text](gamescreenshot.png)](https://game1.bozmen.xyz)
 
 **Controls:**
 - Use W-A-S-D keys to move around.
