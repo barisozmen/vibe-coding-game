@@ -38,10 +38,10 @@ the player can go down into terrarin. why does it happen? what kind of game syst
 
 
 Others that worked well:
-your solution worked, but now, the player seem a bit above of the surface. why this is happening? I want him to be just above the terrain, not about 1-2 meters above
+- your solution worked, but now, the player seem a bit above of the surface. why this is happening? I want him to be just above the terrain, not about 1-2 meters above
 
 
-improve the collision system so that if the player collides with LowPoly objects, it bounces back from it. Right now, the player can pass through trees, buildings, and other added objects
+- improve the collision system so that if the player collides with LowPoly objects, it bounces back from it. Right now, the player can pass through trees, buildings, and other added objects
 
 
 
