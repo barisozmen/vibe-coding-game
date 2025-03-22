@@ -6,11 +6,15 @@ This is what you'll see when you open the game:
 [![alt text](gamescreenshot.png)](https://game1.bozmen.xyz)
 
 **Controls:**
-- Use W-A-S-D keys to move around.
-- Use mouse left-click to look around.
-- Use left mouse button to interact with objects.
+- W-A-S-D keys to move your character
+- Hold and drag left mouse button to look around
+- Left click to interact with objects in the world
 
-**Important note:** You might be spawned underwater in the beginning of the game (it's random). If so, please look-around to find a land, and go there with W-A-S-D keys. As another option, you can just refresh the page, and until you get spawned on land.
+**Getting Started:**
+If you spawn underwater (which can happen randomly):
+1. Click and drag your mouse to look around for land
+2. Use WASD keys to swim towards the nearest shore
+3. Alternatively, you can refresh the page for a new spawn location on land
 
 
 ## Introduction
