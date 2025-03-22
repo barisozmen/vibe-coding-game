@@ -106,6 +106,7 @@ function createControlsOverlay() {
     <h3 style="margin: 0 0 5px 0; font-size: 16px;">Game Controls</h3>
     <p style="margin: 3px 0;">W-A-S-D Keys: Move</p>
     <p style="margin: 3px 0;">Mouse Drag: Look around</p>
+    <p style="margin: 3px 0;">Mouse wheel: Zoom in/out</p>
   `;
 
   document.body.appendChild(overlay);
