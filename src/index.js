@@ -84,6 +84,38 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
+// Add controls UI overlay
+function createControlsOverlay() {
+  const overlay = document.createElement('div');
+  overlay.id = 'controls-overlay';
+  overlay.style.position = 'absolute';
+  overlay.style.top = '10px';
+  overlay.style.left = '10px';
+  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+  overlay.style.color = 'white';
+  overlay.style.padding = '10px';
+  overlay.style.borderRadius = '5px';
+  overlay.style.fontFamily = 'Arial, sans-serif';
+  overlay.style.fontSize = '14px';
+  overlay.style.zIndex = '1000';
+  overlay.style.pointerEvents = 'none'; // Allow clicking through the overlay
+  overlay.style.userSelect = 'none'; // Prevent text selection
+  overlay.style.maxWidth = '250px';
+
+  overlay.innerHTML = `
+    <h3 style="margin: 0 0 5px 0; font-size: 16px;">Game Controls</h3>
+    <p style="margin: 3px 0;">W-A-S-D Keys: Move</p>
+    <p style="margin: 3px 0;">Mouse Drag: Look around</p>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
+// Call this after your renderer is initialized and appended to the document
+// For example, after:
+// document.body.appendChild(renderer.domElement);
+createControlsOverlay();
+
 // Animation loop
 function animate() {
   requestAnimationFrame(animate);
