@@ -352,3 +352,7 @@ generateHeight(x, z) {
 This 3D RPG framework provides a solid foundation for building immersive open-world games with Three.js. The component-based architecture makes it easy to extend and customize. When adding new features, follow the established patterns and organization to maintain code quality and performance.
 
 Happy game development!
+
+
+## Colophon
+Inspired from [this youtube video](https://www.youtube.com/watch?v=1151_tqZRDc)
